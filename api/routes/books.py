@@ -65,6 +65,15 @@ async def delete_book(book_id: int) -> None:
 async def get_book(book_id: int) -> Book:
     """
     Retrieve a book by its ID.
+
+    Args:
+        book_id (int): The ID of the book to retrieve.
+
+    Returns:
+        Book: The requested book details.
+
+    Raises:
+        HTTPException: If the book is not found (404 Not Found).
     """
     book = db.get_book(book_id)
     if book is None:
