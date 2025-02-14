@@ -10,6 +10,7 @@ jobs:
     name: Deploy FastAPI App
     runs-on: ubuntu-latest  # Use the latest Ubuntu environment
 
+
     steps:
       # Step 1: Check out the repository
       - name: Checkout code
