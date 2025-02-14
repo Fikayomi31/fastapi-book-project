@@ -1,27 +1,47 @@
-name: CD - Deploy FastAPI
+name: Deploy FastAPI App
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger on merge to the main branch
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    name: Deploy FastAPI App
+    runs-on: ubuntu-latest  # Use the latest Ubuntu environment
 
     steps:
-      - name: Checkout Code
+      # Step 1: Check out the repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/${{ secrets.SERVER_USER }}/fastapi-book-project
-            git pull origin main
+      # Step 2: Set up SSH
+      - name: Set up SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          UBUNTU_IP: ${{ secrets.UBUNTU_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $UBUNTU_IP >> ~/.ssh/known_hosts
+
+      # Step 3: Copy the new code to the Ubuntu machine
+      - name: Copy code to Ubuntu
+        env:
+          UBUNTU_IP: ${{ secrets.UBUNTU_IP }}
+        run: |
+          scp -r . fikayomi@$UBUNTU_IP:/var/www/fastapi-book-project
+
+      # Step 4: Install dependencies and restart the app
+      - name: Update and restart FastAPI app
+        env:
+          UBUNTU_IP: ${{ secrets.UBUNTU_IP }}
+        run: |
+          ssh fikayomi@$UBUNTU_IP "
+            cd /var/www/fastapi-book-project
+            python -m venv venv
             source venv/bin/activate
             pip install -r requirements.txt
-            sudo systemctl restart fastapi
+            sudo supervisorctl restart fastapi
+          "
